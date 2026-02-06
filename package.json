@@ -4,7 +4,8 @@
   "description": "Projet Fil rouge pour la matière test & test unitaire",
   "main": "validator.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "jsdoc": "jsdoc -c ./jsdoc.config.json -r -d ./docs"
   },
   "repository": {
     "type": "git",
