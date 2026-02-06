@@ -60,6 +60,10 @@ describe('calculateAge Unit Test Suites', () => {
         expect(() => calculateAge()).toThrow('missing param p')
     })
 
+    it('should throw a "missing param p" error when param is null', () => {
+        expect(() => calculateAge(null)).toThrow('missing param p')
+    })
+
 })
 
 /**
@@ -81,6 +85,14 @@ describe('codePostal Unit test Suite', () => {
 
     it('should throw a "missing param p" error', () => {
         expect(() => codePostal()).toThrow('missing param p')
+    })
+
+    it('should throw a "missing param p" error when param is null', () => {
+        expect(() => codePostal(null)).toThrow('missing param p')
+    })
+
+    it('should return false for an empty object', () => {
+        expect(codePostal({})).toBe(false)
     })
 
 })
@@ -117,6 +129,14 @@ describe('nomPrenom Unit test Suite', () => {
         expect(() => nomPrenom()).toThrow('missing param p')
     })
 
+    it('should throw a "missing param p" error when param is null', () => {
+        expect(() => nomPrenom(null)).toThrow('missing param p')
+    })
+
+    it('should return false for an empty object', () => {
+        expect(nomPrenom({})).toBe(false)
+    })
+
 })
 
 /**
@@ -138,6 +158,14 @@ describe('email Unit test Suite', () => {
 
     it('should throw a "missing param p" error when param is missing', () => {
         expect(() => email()).toThrow('missing param p')
+    })
+
+    it('should throw a "missing param p" error when param is null', () => {
+        expect(() => email(null)).toThrow('missing param p')
+    })
+
+    it('should return false for an empty object', () => {
+        expect(email({})).toBe(false)
     })
 
 })

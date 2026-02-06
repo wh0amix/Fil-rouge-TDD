@@ -1,5 +1,5 @@
 function calculateAge(p) {
-	if (p === undefined) throw new Error('missing param p')
+	if (p == null) throw new Error('missing param p')
 	if (!p.birth) throw new Error('missing birth')
 	const birth = p.birth
 	if (!(birth instanceof Date) || isNaN(birth.getTime())) throw new Error('birth must be a valid Date')
@@ -14,13 +14,13 @@ function calculateAge(p) {
 }
 
 function codePostal(p) {
-	if (p === undefined) throw new Error('missing param p')
+	if (p == null) throw new Error('missing param p')
 	if (typeof p !== 'string') return false
 	return /^[0-9]{5}$/.test(p)
 }
 
 function nomPrenom(p) {
-	if (p === undefined) throw new Error('missing param p')
+	if (p == null) throw new Error('missing param p')
 	if (typeof p !== 'string') return false
 	// reject simple XSS patterns
 	if (/[<>]/.test(p)) return false
@@ -30,7 +30,7 @@ function nomPrenom(p) {
 }
 
 function email(p) {
-	if (p === undefined) throw new Error('missing param p')
+	if (p == null) throw new Error('missing param p')
 	if (typeof p !== 'string') return false
 	const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 	return re.test(p)
