@@ -1,0 +1,22 @@
+{
+  "name": "fil-rouge-tdd",
+  "version": "1.0.0",
+  "description": "Projet Fil rouge pour la matière test & test unitaire",
+  "main": "validator.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wh0amix/Fil-rouge-TDD.git"
+  },
+  "author": "Wh0amix",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wh0amix/Fil-rouge-TDD/issues"
+  },
+  "homepage": "https://github.com/wh0amix/Fil-rouge-TDD#readme",
+  "devDependencies": {
+    "jsdoc": "^4.0.5"
+  }
+}
