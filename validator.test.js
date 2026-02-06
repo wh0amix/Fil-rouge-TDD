@@ -1,4 +1,4 @@
-import 'validator.js';
+import 'validator.js'
 
 /**
  * @function calculateAge
@@ -58,6 +58,26 @@ describe('calculateAge Unit Test Suites', () => {
     })
     it('should throw a "missing param p" error', () => {
         expect(() => calculateAge()).toThrow('missing param p')
+    })
+
+})
+
+describe('codePostal Unit test Suite', () => {
+    it('should return true for a valid postal code', () => {
+        expect(codePostal('75001')).toBe(true)
+    })
+
+    it('should return false for a postal code containing letters', () => {
+        expect(codePostal('75A01')).toBe(false)
+    })
+
+    it('should return false for a postal code with wrong length', () => {
+        expect(codePostal('7500')).toBe(false)
+        expect(codePostal('750012')).toBe(false)
+    })
+
+    it('should throw a "missing param p" error', () => {
+        expect(() => codePostal()).toThrow('missing param p')
     })
 
 })
