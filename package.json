@@ -4,7 +4,7 @@
   "description": "Projet Fil rouge pour la matière test & test unitaire",
   "main": "validator.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/wh0amix/Fil-rouge-TDD#readme",
   "devDependencies": {
+    "@babel/preset-env": "^7.29.0",
+    "babel-jest": "^30.2.0",
     "jsdoc": "^4.0.5"
   }
 }

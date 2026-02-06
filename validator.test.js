@@ -62,6 +62,9 @@ describe('calculateAge Unit Test Suites', () => {
 
 })
 
+/**
+ * @function codePostal
+ */
 describe('codePostal Unit test Suite', () => {
     it('should return true for a valid postal code', () => {
         expect(codePostal('75001')).toBe(true)
@@ -78,6 +81,63 @@ describe('codePostal Unit test Suite', () => {
 
     it('should throw a "missing param p" error', () => {
         expect(() => codePostal()).toThrow('missing param p')
+    })
+
+})
+
+/**
+ * @function nomPrenom
+ * @description Valide le nom et le prénom: lettres, accents, espaces et tirets autorisés. Rejette chiffres, caractères spéciaux et simples injections XSS.
+ */
+describe('nomPrenom Unit test Suite', () => {
+    it('should return true for a valid name', () => {
+        expect(nomPrenom('Tony Stark')).toBe(true)
+    })
+
+    it('should return true for names with accents and hyphens', () => {
+        expect(nomPrenom('Élise Léo-Durand')).toBe(true)
+    })
+
+    it('should return false when name contains digits', () => {
+        expect(nomPrenom('Tony Stark2')).toBe(false)
+        expect(nomPrenom('J3an Stark')).toBe(false)
+    })
+
+    it('should return false when name contains disallowed special characters', () => {
+        expect(nomPrenom('Tony Stark!')).toBe(false)
+        expect(nomPrenom('Jean@Stark')).toBe(false)
+    })
+
+    it('should return false for simple XSS injections', () => {
+        expect(nomPrenom('<script>alert(1)</script> Stark')).toBe(false)
+        expect(nomPrenom('Tony <img src=x onerror=alert(1)>')).toBe(false)
+    })
+
+    it('should throw a "missing param p" error when param is missing', () => {
+        expect(() => nomPrenom()).toThrow('missing param p')
+    })
+
+})
+
+/**
+ * @function email
+ * @description Vérifie le format standard d'une adresse email.
+ */
+describe('email Unit test Suite', () => {
+    it('should return true for a valid email', () => {
+        expect(email('Tony.Stark@example.com')).toBe(true)
+    })
+
+    it('should return false for an invalid email (missing @)', () => {
+        expect(email('Tony.Starkexample.com')).toBe(false)
+    })
+
+    it('should return false for an email with spaces', () => {
+        expect(email('Tony Stark@example.com')).toBe(false)
+    })
+
+    it('should throw a "missing param p" error when param is missing', () => {
+        expect(() => email()).toThrow('missing param p')
     })
 
 })
