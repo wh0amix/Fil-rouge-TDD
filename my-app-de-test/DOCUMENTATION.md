@@ -97,17 +97,17 @@ Les données sont sauvegardées dans le localStorage sous la clé `'users'`. For
 
 ### Couverture de test
 
-**Validateurs (validators.test.js)**: 100% de couverture
+**Validateurs (validators.test.js)**: 100% de couverture - 32 tests
 
-- **validateEmail**: 3 suites (valides, invalides, non-string)
-- **validateCodePostal**: 3 suites (valides, invalides, non-string)
-- **validateAge**: 6 suites (>=18, <18, date future, invalide, non-string, cas limites)
-- **validateNom**: 3 suites (valide, vide, non-string)
-- **validatePrenom**: 3 suites (valide, vide, non-string)
-- **validateVille**: 3 suites (valide, vide, non-string)
-- **validateFormData**: 9 suites (tous les champs, erreurs multiples)
+- **validateEmail**: 3 tests (valides, invalides, non-string)
+- **validateCodePostal**: 3 tests (valides, invalides, non-string)
+- **validateAge**: 7 tests (>=18, <18, date future, invalide, non-string, cas limites)
+- **validateNom**: 4 tests (valide, chiffres rejetés, vide, non-string)
+- **validatePrenom**: 4 tests (valide, chiffres rejetés, vide, non-string)
+- **validateVille**: 3 tests (valide, vide, non-string)
+- **validateFormData**: 8 tests (données valides, tous les champs invalides, erreurs multiples)
 
-**Composant App (App.test.js)**
+**Composant App (App.test.js)**: 22 tests
 
 #### Rendering (2 tests)
 - Rendu de tous les éléments du formulaire
@@ -118,9 +118,9 @@ Les données sont sauvegardées dans le localStorage sous la clé `'users'`. For
 - Suppression des messages d'erreur lors de la saisie
 - Gestion de plusieurs champs
 
-#### Form Validation (7 tests)
-- Erreur pour nom vide
-- Erreur pour prénom vide
+#### Form Validation (9 tests)
+- Erreur pour nom vide/avec chiffres
+- Erreur pour prénom vide/avec chiffres
 - Erreur pour email invalide
 - Erreur pour date manquante
 - Erreur pour âge <18
@@ -132,14 +132,16 @@ Les données sont sauvegardées dans le localStorage sous la clé `'users'`. For
 - Sauvegarde en localStorage
 - Réinitialisation du formulaire
 - Message de succès
-- Disparition du message après 3 secondes
 - Ajout de plusieurs utilisateurs
+- Affichage du message de succès
 
 #### Integration Tests (2 tests)
 - Flux complet d'enregistrement
-- Validation de tous les champs à la fois
+- Validation de tous les champs à la fois (formulaire vide)
 
-**Total: 28 tests App + 48 tests validateurs = 76 tests**
+**Fichier ancien (validator.test.js)**: 28 tests (pas testé dans la couverture finale)
+
+**Total: 32 tests validateurs + 22 tests App = 54 tests (+ 28 tests ancien = 82 tests au total)**
 
 ### Exécution des tests
 
@@ -248,13 +250,6 @@ npm test
 
 ## Notes de développement
 
-### Pourquoi validator.js en dehors de React?
-
-Séparer la logique métier (validation) du rendu React permet:
-- Testabilité indépendante
-- Réutilisabilité dans d'autres contextes
-- Maintenance facilitée
-- Clarté du code
 
 ### Choix technologiques
 
@@ -262,25 +257,3 @@ Séparer la logique métier (validation) du rendu React permet:
 2. **localStorage**: Persistance locale sans base de données
 3. **Regex**: Validation simple et performante
 4. **React Testing Library**: Test du comportement utilisateur, pas des détails d'implémentation
-
-## Limitations et améliorations futures
-
-### Limitations actuelles
-- Pas de base de données
-- Pas d'authentification
-- Pas de upload d'image
-- Code postal limité au format français 5 chiffres
-
-### Améliorations possibles
-- Backend API pour la persistance
-- Édition/suppression d'utilisateurs
-- Export des données
-- Internationalisation
-- Captcha anti-bot
-- Email de confirmation
-
-## Contact et support
-
-Pour toute question sur ce projet, consultez:
-- La suite de tests pour des exemples d'utilisation
-- Les commentaires dans le code pour les détails d'implémentation

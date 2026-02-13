@@ -38,6 +38,8 @@ function App() {
     setTimeout(() => setSuccess(false), 3000);
   };
 
+  //debug
+  //console.log(localStorage.getItem('users');
 
   return (
     <div className="form-container">
