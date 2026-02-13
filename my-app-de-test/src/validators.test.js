@@ -100,6 +100,26 @@ describe('validateAge', () => {
     expect(validateAge(eighteenYearsAgo.toISOString().split('T')[0])).toBe(true);
     expect(validateAge(oneYearFromNow.toISOString().split('T')[0])).toBe(false);
   });
+
+  test('should correctly handle birthday not yet occurred this year', () => {
+    // Cas : anniversaire plus tard dans le même mois
+    // Exemple : aujourd'hui c'est le 5 du mois
+    // Et la personne est née le 20 du même mois
+    // Elle est techniquement 18 ans (calculé) mais l'anniversaire n'a pas eu lieu
+    // Donc on soustrait 1 → elle a 17 ans effectifs
+
+    const today = new Date();
+    const daysPassed = today.getDate();
+
+    // Créer une date de naissance : 18 ans mais avec un jour PLUS TARD ce mois
+    const futureDay = daysPassed + 5;
+    if (futureDay <= 28) { // S'assurer que le jour existe dans tous les mois
+      const birthDate = new Date(today.getFullYear() - 18, today.getMonth(), futureDay);
+      // Cette personne a calculé 18 ans mais l'anniversaire n'a pas eu lieu
+      // donc elle a effectivement 17 ans
+      expect(validateAge(birthDate.toISOString().split('T')[0])).toBe(false);
+    }
+  });
 });
 
 describe('validateNom', () => {
