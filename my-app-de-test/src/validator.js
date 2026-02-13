@@ -36,7 +36,7 @@ function email(p) {
 	return re.test(p)
 }
 
-// expose functions to global scope so tests can call them via side-effect import
+
 global.calculateAge = calculateAge
 global.codePostal = codePostal
 global.nomPrenom = nomPrenom
