@@ -45,16 +45,23 @@ describe('calculateAge Unit Test Suites', () => {
     })
 
     it('should handle leap-day birthdays correctly', () => {
+        // Créer une personne née un jour bissextile
+        const leapDayPerson = {
+            ...person,
+            birth: new Date('2000-02-29') // Né le 29 février 2000
+        }
+        
         const expected = (() => {
-            const now = new Date(²)
-            let age = now.getFullYear() - person.birth.getFullYear()
-            const m = now.getMonth() - person.birth.getMonth()
-            if (m < 0 || (m === 0 && now.getDate() < person.birth.getDate())) {
+            const now = new Date() // Date actuelle (ou une date fixe pour le test)
+            let age = now.getFullYear() - leapDayPerson.birth.getFullYear()
+            const m = now.getMonth() - leapDayPerson.birth.getMonth()
+            if (m < 0 || (m === 0 && now.getDate() < leapDayPerson.birth.getDate())) {
                 age--
             }
             return age
         })()
-        expect(calculateAge(person)).toBe(expected)
+        
+        expect(calculateAge(leapDayPerson)).toBe(expected)
     })
     it('should throw a "missing param p" error', () => {
         expect(() => calculateAge()).toThrow('missing param p')
