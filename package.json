@@ -21,6 +21,7 @@
     "@babel/preset-env": "^7.29.0",
     "babel-jest": "^30.2.0",
     "jsdoc": "^4.0.5",
+    "react-scripts": "^5.0.1",
     "react-test-renderer": "^19.2.4"
   }
 }

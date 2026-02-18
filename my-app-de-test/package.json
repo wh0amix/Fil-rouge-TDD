@@ -11,11 +11,12 @@
     "react-dom": "^19.2.4",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
+    
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test  --coverage --collectCoverageFrom=!src/reportWebVitals.js --collectCoverageFrom=!src/index.js --collectCoverageFrom=!src/validator.js --collectCoverageFrom=!src/App.css",
+    "test": "react-scripts test  --coverage --collectCoverageFrom=!src/reportWebVitals.js --collectCoverageFrom=!src/index.js --collectCoverageFrom=!src/validator.js --collectCoverageFrom=!src/App.css --watchAll=false",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
