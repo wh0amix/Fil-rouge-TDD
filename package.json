@@ -4,7 +4,7 @@
   "description": "Projet Fil rouge pour la matière test & test unitaire",
   "main": "my-app-de-test/src/validator.js",
   "scripts": {
-    "test": "jest",
+    "test": "react-scripts test --coverage --watchAll=false",
     "jsdoc": "jsdoc -c ./jsdoc.config.json -r -d ./docs"
   },
   "repository": {

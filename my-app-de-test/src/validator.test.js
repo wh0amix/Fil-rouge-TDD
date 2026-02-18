@@ -46,7 +46,7 @@ describe('calculateAge Unit Test Suites', () => {
 
     it('should handle leap-day birthdays correctly', () => {
         const expected = (() => {
-            const now = new Date()
+            const now = new Date(²)
             let age = now.getFullYear() - person.birth.getFullYear()
             const m = now.getMonth() - person.birth.getMonth()
             if (m < 0 || (m === 0 && now.getDate() < person.birth.getDate())) {
