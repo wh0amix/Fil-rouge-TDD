@@ -27,28 +27,43 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       
-      - name: npm ci and test
+      - name: Install root dependencies
+        run: npm ci
+      
+      - name: Install React app dependencies and build
         working-directory: ./my-app-de-test
         run: |
           npm ci
-          npm run build --if-present
-          npm test -- --coverage # Exécutez les tests avec couverture
+          npm run build
+          npm test -- --coverage
+      
+      - name: Generate JSDoc documentation
+        run: npm run jsdoc
       
       - name: Set up Codecov
         uses: codecov/codecov-action@v3
         with:
-          file: ./my-app-de-test/coverage/lcov.info # Chemin vers le fichier de couverture
+          file: ./my-app-de-test/coverage/lcov.info
           flags: unittests
           name: codecov-umbrella
 
+      - name: Create deployment structure
+        run: |
+          mkdir -p deploy/app
+          mkdir -p deploy/docs
+          mkdir -p deploy/coverage
+          cp -r my-app-de-test/build/* deploy/app/
+          cp -r docs/* deploy/docs/
+          cp -r my-app-de-test/coverage/lcov-report/* deploy/coverage/
+      
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v3
       
-      - name: Upload Coverage Report Artifact
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./my-app-de-test/coverage/lcov-report
+          path: ./deploy
           if-no-files-found: error
 
   deploy:
