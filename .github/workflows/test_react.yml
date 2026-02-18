@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [ main ]
 
+# Autorisations nécessaires pour le déploiement Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   build_test:
     runs-on: ubuntu-latest
@@ -16,21 +22,45 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
+      
       - name: npm ci and test
         working-directory: ./my-app-de-test
         run: |
           npm ci
           npm run build --if-present
           npm test
+      
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v3
+      
       - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: build
-          if-no-file-found: error
+          path: ./my-app-de-test/build
+          if-no-files-found: error
+
+  # Nouveau job de déploiement
+  deploy:
+    # Dépendance au job build_test
+    needs: build_test
+    
+    # Déploiement uniquement sur la branche main
+    if: github.ref == 'refs/heads/main'
+    
+    runs-on: ubuntu-latest
+    
+    # Environnement github-pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
