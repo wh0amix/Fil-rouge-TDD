@@ -45,10 +45,10 @@ jobs:
         id: pages
         uses: actions/configure-pages@v3
       
-      - name: Upload Build Artifact
+      - name: Upload Coverage Report Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./my-app-de-test/build
+          path: ./my-app-de-test/coverage/lcov-report
           if-no-files-found: error
 
   deploy:
