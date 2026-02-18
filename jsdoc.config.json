@@ -1,6 +1,23 @@
 {
     "source": {
-        "include": [ "." ],
-        "exclude": [ "node_modules/" ]
+        "include": [ 
+            "my-app-de-test/src",
+            "README.md"
+        ],
+        "exclude": [ 
+            "node_modules/",
+            "my-app-de-test/node_modules/",
+            "coverage/",
+            "my-app-de-test/coverage/",
+            "my-app-de-test/build/",
+            "my-app-de-test/public/",
+            ".git/"
+        ],
+        "includePattern": ".+\\.js(doc|on)?$",
+        "excludePattern": "(^|\\/|\\\\)_"
+    },
+    "opts": {
+        "recurse": true,
+        "readme": "./README.md"
     }
 }
