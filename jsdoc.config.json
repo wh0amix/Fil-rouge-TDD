@@ -1,8 +1,7 @@
 {
     "source": {
         "include": [ 
-            "my-app-de-test/src",
-            "README.md"
+            "my-app-de-test/src"
         ],
         "exclude": [ 
             "node_modules/",
@@ -17,7 +16,6 @@
         "excludePattern": "(^|\\/|\\\\)_"
     },
     "opts": {
-        "recurse": true,
-        "readme": "./README.md"
+        "recurse": true
     }
 }
