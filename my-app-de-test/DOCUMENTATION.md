@@ -1,5 +1,5 @@
 # Documentation - Formulaire d'Enregistrement React
-
+#
 ## Vue d'ensemble
 
 Ce projet est une application React permettant aux utilisateurs de s'enregistrer via un formulaire avec validation complète. Les données sont sauvegardées dans le localStorage du navigateur.
