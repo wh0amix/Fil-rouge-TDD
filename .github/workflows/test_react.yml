@@ -28,7 +28,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       
       - name: Install root dependencies
-        run: npm ci
+        run: npm install
       
       - name: Install React app dependencies and build
         working-directory: ./my-app-de-test
