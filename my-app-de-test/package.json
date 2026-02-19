@@ -2,6 +2,7 @@
   "name": "my-app-de-test",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://wh0amix.github.io/Fil-rouge-TDD",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -19,6 +20,8 @@
     "eject": "react-scripts eject",
     "cypress": "cypress open"
   },
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d build",
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -38,6 +41,7 @@
     ]
   },
   "devDependencies": {
-    "cypress": "^15.10.0"
+    "cypress": "^15.10.0",
+    "gh-pages": "^5.0.0"
   }
 }
