@@ -36,6 +36,12 @@ jobs:
           npm ci
           npm run build
           npm test -- --coverage
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          build: npm run build 
+          start: npm start
+        
       
       - name: Generate JSDoc documentation
         run: npm run jsdoc
