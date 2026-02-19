@@ -61,12 +61,12 @@ jobs:
 
       - name: Create deployment structure
         run: |
-          mkdir -p deploy/app
-          mkdir -p deploy/docs
-          mkdir -p deploy/coverage
-          cp -r my-app-de-test/build/* deploy/app/
-          cp -r docs/* deploy/docs/
-          cp -r my-app-de-test/coverage/lcov-report/* deploy/coverage/
+          mkdir -p deploy
+          mkdir -p deploy/_docs
+          mkdir -p deploy/_coverage
+          cp -r my-app-de-test/build/* deploy/
+          cp -r docs/* deploy/_docs/
+          cp -r my-app-de-test/coverage/lcov-report/* deploy/_coverage/
       
       - name: Setup Pages
         id: pages
