@@ -46,6 +46,7 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           working-directory: ./my-app-de-test
+          install: false
           build: npm run build 
           start: npm start
       
