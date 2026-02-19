@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import { validateFormData } from './validators';
 
@@ -13,6 +13,13 @@ function App() {
   });
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
+  const [userCount, setUserCount] = useState(0);
+
+  // Charger le nombre d'utilisateurs au montage
+  useEffect(() => {
+    const users = JSON.parse(localStorage.getItem('users')) || [];
+    setUserCount(users.length);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,6 +39,8 @@ function App() {
     const users = JSON.parse(localStorage.getItem('users')) || [];
     users.push(formData);
     localStorage.setItem('users', JSON.stringify(users));
+    
+    setUserCount(users.length);
 
     setFormData({ nom: '', prenom: '', email: '', dateNaissance: '', ville: '', codePostal: '' });
     setSuccess(true);
@@ -121,6 +130,7 @@ function App() {
 
         <button type="submit">S'enregistrer</button>
       </form>
+      <p className="user-count">{userCount} user(s) already registered</p>
     </div>
   );
 }
