@@ -30,18 +30,24 @@ jobs:
       - name: Install root dependencies
         run: npm install
       
-      - name: Install React app dependencies and build
+      - name: Install React app dependencies
         working-directory: ./my-app-de-test
-        run: |
-          npm ci
-          npm run build
-          npm test -- --coverage
+        run: npm ci
+      
+      - name: Build React app
+        working-directory: ./my-app-de-test
+        run: npm run build
+      
+      - name: Run tests with coverage
+        working-directory: ./my-app-de-test
+        run: npm test -- --coverage
+      
       - name: Cypress run
         uses: cypress-io/github-action@v6
         with:
+          working-directory: ./my-app-de-test
           build: npm run build 
           start: npm start
-        
       
       - name: Generate JSDoc documentation
         run: npm run jsdoc
