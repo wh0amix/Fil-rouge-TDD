@@ -38,17 +38,19 @@ jobs:
         working-directory: ./my-app-de-test
         run: npm run build
       
-      - name: Run tests with coverage
+      - name: Run Jest tests with coverage (mocked API)
         working-directory: ./my-app-de-test
         run: npm test -- --coverage
-      
-      - name: Cypress run
+        # Tests d'intégration avec axios mockés - aucun appel réseau réel
+
+      - name: Cypress E2E tests (intercepted API)
         uses: cypress-io/github-action@v6
         with:
           working-directory: ./my-app-de-test
           install: false
-          build: npm run build 
+          build: npm run build
           start: npm start
+        # Tests E2E avec cy.intercept() - API entièrement mockée
       
       - name: Generate JSDoc documentation
         run: npm run jsdoc

@@ -1,70 +1,78 @@
-# Getting Started with Create React App
+# Application d'Enregistrement avec API
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Formulaire d'enregistrement utilisant JSONPlaceholder comme API externe. Tests complètement isolés via mocks Jest et Cypress.
 
-## Available Scripts
+## Installation
 
-In the project directory, you can run:
+```bash
+npm install
+```
 
-### `npm start`
+## Démarrage
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```bash
+npm start
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Ouvre http://localhost:3000
 
-### `npm test`
+## Tests
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Jest (tests d'intégration)
+```bash
+npm test
+```
 
-### `npm run build`
+Cas couverts:
+- Succès (200/201): Données valides, message de succès, formulaire vidé
+- Erreur métier (400): Email existe, données invalides
+- Erreur serveur (500): Crash serveur, comportement graceful, réessai
+- Validation: Pas d'appel API si validation échoue
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Cypress (tests E2E)
+```bash
+npx cypress open    # Mode interactif
+npx cypress run     # Mode headless
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Cas couverts:
+- Workflow complet avec succès
+- Erreur 400 avec message spécifique
+- Erreur 500 sans crash
+- Réessai après erreur
+- Validation locale
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Architecture
 
-### `npm run eject`
+Les appels axios sont mockés dans les tests pour isoler l'application du serveur.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Jest mock:
+```javascript
+jest.mock('axios');
+axios.post.mockResolvedValueOnce({ data: { id: 1 } });
+axios.post.mockRejectedValueOnce(new Error('Email exists'));
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Cypress intercept:
+```javascript
+cy.intercept('POST', '**/users', { statusCode: 201, body: {...} });
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Fichiers clés
 
-## Learn More
+- `src/api/userAPI.js` - Service API axios
+- `src/UsersContext.js` - Gestion d'état avec appels API
+- `src/pages/RegisterPage.js` - Formulaire avec gestion async
+- `src/pages/RegisterPage.test.js` - Tests Jest (15+ cas)
+- `cypress/e2e/navigation.cy.js` - Tests Cypress (5 scénarios)
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Production
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Pour utiliser une API réelle:
+```javascript
+// src/api/userAPI.js
+const API_URL = 'https://votre-api.com/users';
+```
 
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Les tests continueront à fonctionner avec les mocks.

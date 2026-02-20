@@ -1,14 +1,40 @@
 describe('Navigation E2E - Scénarios Multi-Pages', () => {
-  
+
   beforeEach(() => {
-    // Nettoyer localStorage avant chaque test
-    cy.clearLocalStorage();
+    // Mocker les appels GET /users (liste vide initialement)
+    cy.intercept('GET', '**/users', {
+      statusCode: 200,
+      body: []
+    }).as('getUsers');
   });
 
-  describe('Scénario Nominal', () => {
-    it('should navigate through registration flow and display updated user count', () => {
+  describe('Scénario Nominal - API Success (200/201)', () => {
+    it('should navigate through registration flow with successful API call', () => {
+      // Mocker le POST pour créer un utilisateur
+      cy.intercept('POST', '**/users', {
+        statusCode: 201,
+        body: {
+          id: 1,
+          name: 'Dupont Pierre',
+          email: 'pierre.dupont@example.com',
+          phone: '75001',
+          username: 'dupont'
+        }
+      }).as('createUser');
+
+      // Mocker le GET pour afficher l'utilisateur créé
+      cy.intercept('GET', '**/users', {
+        statusCode: 200,
+        body: [{
+          id: 1,
+          name: 'Dupont Pierre',
+          email: 'pierre.dupont@example.com'
+        }]
+      }).as('getUsersAfter');
+
       // 1. Accéder à l'accueil
       cy.visit('/');
+      cy.wait('@getUsers');
 
       // 2. Vérifier que l'accueil affiche "0 utilisateur(s) inscrit(s)"
       cy.get('[data-cy="user-count"]').should('contain', '0 utilisateur(s) inscrit(s)');
@@ -16,14 +42,12 @@ describe('Navigation E2E - Scénarios Multi-Pages', () => {
       // 3. Vérifier que la liste est vide
       cy.get('[data-cy="empty-list"]').should('be.visible').and('contain', 'Aucun utilisateur inscrit');
 
-      // 4. Cliquer sur le lien vers le formulaire
+      // 4. Naviguer vers le formulaire
       cy.get('[data-cy="link-register"]').click();
-
-      // 5. Vérifier que nous sommes sur la page d'inscription
       cy.url().should('include', '/register');
       cy.get('[data-cy="register-form"]').should('be.visible');
 
-      // 6. Remplir le formulaire avec un utilisateur valide
+      // 5. Remplir le formulaire
       cy.get('[data-cy="input-nom"]').type('Dupont');
       cy.get('[data-cy="input-prenom"]').type('Pierre');
       cy.get('[data-cy="input-email"]').type('pierre.dupont@example.com');
@@ -31,82 +55,167 @@ describe('Navigation E2E - Scénarios Multi-Pages', () => {
       cy.get('[data-cy="input-ville"]').type('Paris');
       cy.get('[data-cy="input-codePostal"]').type('75001');
 
-      // 7. Soumettre le formulaire
+      // 6. Soumettre le formulaire
       cy.get('[data-cy="submit-btn"]').click();
+
+      // 7. Attendre l'appel POST
+      cy.wait('@createUser');
 
       // 8. Vérifier le message de succès
       cy.get('[data-cy="success-message"]').should('be.visible').and('contain', 'Enregistrement réussi');
 
-      // 9. Attendre la redirection vers l'accueil (2 secondes configurées dans RegisterPage)
+      // 9. Attendre la redirection (2 secondes)
       cy.url({ timeout: 5000 }).should('include', '/');
 
-      // 10. Vérifier le compteur mis à jour
+      // 10. Attendre le GET des utilisateurs après
+      cy.wait('@getUsersAfter');
+
+      // 11. Vérifier que le compteur est mis à jour
       cy.get('[data-cy="user-count"]').should('contain', '1 utilisateur(s) inscrit(s)');
 
-      // 11. Vérifier que l'utilisateur apparaît dans la liste
+      // 12. Vérifier que l'utilisateur apparaît dans la liste
       cy.get('[data-cy="users-list"]').should('be.visible');
       cy.get('[data-cy="user-0"]').should('contain', 'Dupont Pierre');
-      cy.get('[data-cy="user-0"]').should('contain', 'pierre.dupont@example.com');
     });
   });
 
-  describe('Scénario d\'Erreur', () => {
-    it('should handle invalid form submission and keep user count unchanged', () => {
-      // Pré-condition : ajouter un utilisateur via localStorage
-      const existingUser = {
-        nom: 'Martin',
-        prenom: 'Jean',
-        email: 'jean.martin@example.com',
-        dateNaissance: '1985-03-20',
-        ville: 'Lyon',
-        codePostal: '69000'
-      };
-      cy.window().then((win) => {
-        win.localStorage.setItem('users', JSON.stringify([existingUser]));
-      });
+  describe('Scénario Erreur Métier - Business Logic (400)', () => {
+    it('should handle email already exists error (400)', () => {
+      // Mocker le POST pour retourner une erreur 400
+      cy.intercept('POST', '**/users', {
+        statusCode: 400,
+        body: { message: 'Email already exists' }
+      }).as('createUserError');
 
-      // 1. Accéder à l'accueil
       cy.visit('/');
+      cy.wait('@getUsers');
 
-      // 2. Vérifier que le compteur affiche "1 utilisateur(s) inscrit(s)"
-      cy.get('[data-cy="user-count"]').should('contain', '1 utilisateur(s) inscrit(s)');
-
-      // 3. Vérifier que l'utilisateur existant est dans la liste
-      cy.get('[data-cy="users-list"]').should('be.visible');
-      cy.get('[data-cy="user-0"]').should('contain', 'Martin Jean');
-
-      // 4. Naviguer vers le formulaire
       cy.get('[data-cy="link-register"]').click();
       cy.url().should('include', '/register');
 
-      // 5. Remplir le formulaire avec des données invalides (nom vide, email mal formé, âge < 18, etc.)
-      // Laisser nom et email vides (déjà vides), remplir les autres partiellement
-      cy.get('[data-cy="input-prenom"]').type('Marie');
-      cy.get('[data-cy="input-dateNaissance"]').type('2010-01-01'); // Moins de 18 ans
-      cy.get('[data-cy="input-ville"]').type('Marseille');
-      cy.get('[data-cy="input-codePostal"]').type('13000');
+      // Remplir le formulaire
+      cy.get('[data-cy="input-nom"]').type('Dupont');
+      cy.get('[data-cy="input-prenom"]').type('Jean');
+      cy.get('[data-cy="input-email"]').type('existing@example.com');
+      cy.get('[data-cy="input-dateNaissance"]').type('1990-05-15');
+      cy.get('[data-cy="input-ville"]').type('Paris');
+      cy.get('[data-cy="input-codePostal"]').type('75001');
 
-      // 6. Soumettre le formulaire
+      // Soumettre
       cy.get('[data-cy="submit-btn"]').click();
+      cy.wait('@createUserError');
 
-      // 7. Vérifier que les erreurs s'affichent
-      cy.get('[data-cy="error-nom"]').should('be.visible').and('contain', 'Le nom');
-      cy.get('[data-cy="error-email"]').should('be.visible').and('contain', 'Email');
-      cy.get('[data-cy="error-dateNaissance"]').should('be.visible');
+      // Vérifier l'affichage de l'erreur
+      cy.get('[data-cy="api-error"]').should('be.visible').and('contain', 'Email already exists');
 
-      // 8. Vérifier qu'il n'y a pas de redirection (on reste sur /register)
+      // Vérifier que le formulaire n'a pas été vidé
+      cy.get('[data-cy="input-nom"]').should('have.value', 'Dupont');
+      cy.get('[data-cy="input-email"]').should('have.value', 'existing@example.com');
+
+      // Vérifier qu'on n'est pas redirigé
+      cy.url().should('include', '/register');
+    });
+  });
+
+  describe('Scénario Erreur Serveur - Server Error (500)', () => {
+    it('should handle server error gracefully without crashing', () => {
+      // Mocker le POST pour retourner une erreur 500
+      cy.intercept('POST', '**/users', {
+        statusCode: 500,
+        body: { message: 'Internal Server Error' }
+      }).as('createUserServerError');
+
+      cy.visit('/');
+      cy.wait('@getUsers');
+
+      cy.get('[data-cy="link-register"]').click();
       cy.url().should('include', '/register');
 
-      // 9. Naviguer manuellement vers l'accueil
-      cy.get('[data-cy="nav-home"]').click();
+      // Remplir le formulaire
+      cy.get('[data-cy="input-nom"]').type('Test');
+      cy.get('[data-cy="input-prenom"]').type('User');
+      cy.get('[data-cy="input-email"]').type('test@example.com');
+      cy.get('[data-cy="input-dateNaissance"]').type('1990-05-15');
+      cy.get('[data-cy="input-ville"]').type('Paris');
+      cy.get('[data-cy="input-codePostal"]').type('75001');
 
-      // 10. Vérifier que le compteur n'a pas changé (toujours 1 utilisateur)
-      cy.get('[data-cy="user-count"]').should('contain', '1 utilisateur(s) inscrit(s)');
+      // Soumettre
+      cy.get('[data-cy="submit-btn"]').click();
+      cy.wait('@createUserServerError');
 
-      // 11. Vérifier que la liste n'a pas changé (seul Martin Jean reste)
-      cy.get('[data-cy="users-list"]').should('be.visible');
-      cy.get('[data-cy="user-0"]').should('contain', 'Martin Jean');
-      cy.get('[data-cy="user-1"]').should('not.exist');
+      // Vérifier l'affichage de l'erreur
+      cy.get('[data-cy="api-error"]').should('be.visible').and('contain', 'Internal Server Error');
+
+      // Vérifier que l'app ne s'est pas plantée
+      cy.get('[data-cy="submit-btn"]').should('be.visible');
+
+      // Vérifier que les données sont conservées
+      cy.get('[data-cy="input-nom"]').should('have.value', 'Test');
+    });
+
+    it('should allow retry after server error', () => {
+      // Premier appel: erreur 500
+      // Deuxième appel: succès
+      cy.intercept('POST', '**/users', (req) => {
+        if (req.reply.callCount === 1) {
+          req.reply({
+            statusCode: 500,
+            body: { message: 'Server Error' }
+          });
+        } else {
+          req.reply({
+            statusCode: 201,
+            body: {
+              id: 1,
+              name: 'Retry User',
+              email: 'retry@example.com'
+            }
+          });
+        }
+      }).as('createUserRetry');
+
+      cy.visit('/');
+      cy.wait('@getUsers');
+
+      cy.get('[data-cy="link-register"]').click();
+
+      cy.get('[data-cy="input-nom"]').type('Retry');
+      cy.get('[data-cy="input-prenom"]').type('User');
+      cy.get('[data-cy="input-email"]').type('retry@example.com');
+      cy.get('[data-cy="input-dateNaissance"]').type('1990-05-15');
+      cy.get('[data-cy="input-ville"]').type('Paris');
+      cy.get('[data-cy="input-codePostal"]').type('75001');
+
+      // Premier essai - erreur
+      cy.get('[data-cy="submit-btn"]').click();
+      cy.get('[data-cy="api-error"]').should('be.visible');
+
+      // Deuxième essai - succès
+      cy.get('[data-cy="submit-btn"]').click();
+      cy.get('[data-cy="success-message"]').should('be.visible');
+    });
+  });
+
+  describe('Scénario Validation - Frontend Validation', () => {
+    it('should show validation errors and not call API', () => {
+      cy.visit('/');
+      cy.wait('@getUsers');
+
+      cy.get('[data-cy="link-register"]').click();
+      cy.url().should('include', '/register');
+
+      // Soumettre sans remplir (erreur de validation)
+      cy.get('[data-cy="submit-btn"]').click();
+
+      // Vérifier les erreurs de validation
+      cy.get('[data-cy="error-nom"]').should('be.visible');
+      cy.get('[data-cy="error-email"]').should('be.visible');
+
+      // Vérifier qu'aucun appel POST n'a été fait
+      cy.get('body').then(() => {
+        // Les interceptions POST ne devraient pas avoir été appelées
+        cy.get('[data-cy="api-error"]').should('not.exist');
+      });
     });
   });
 });

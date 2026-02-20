@@ -6,7 +6,7 @@ import './RegisterPage.css';
 
 function RegisterPage() {
   const navigate = useNavigate();
-  const { addUser } = useContext(UsersContext);
+  const { addUser, apiError } = useContext(UsersContext);
 
   const [formData, setFormData] = useState({
     nom: '',
@@ -18,6 +18,7 @@ function RegisterPage() {
   });
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,7 +26,7 @@ function RegisterPage() {
     setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateFormData(formData);
 
@@ -34,23 +35,33 @@ function RegisterPage() {
       return;
     }
 
-    // Ajouter l'utilisateur via le contexte
-    addUser(formData);
+    setSubmitting(true);
 
-    // Réinitialiser le formulaire et afficher le succès
-    setFormData({ nom: '', prenom: '', email: '', dateNaissance: '', ville: '', codePostal: '' });
-    setSuccess(true);
+    try {
+      // Ajouter l'utilisateur via le contexte (appel API)
+      await addUser(formData);
 
-    // Rediriger vers l'accueil après 2 secondes
-    setTimeout(() => {
-      navigate('/');
-    }, 2000);
+      // Réinitialiser le formulaire et afficher le succès
+      setFormData({ nom: '', prenom: '', email: '', dateNaissance: '', ville: '', codePostal: '' });
+      setSuccess(true);
+
+      // Rediriger vers l'accueil après 2 secondes
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+    } catch (error) {
+      // L'erreur est gérée par le contexte
+      console.error('Erreur lors de l\'ajout de l\'utilisateur:', error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="register-container">
       <h1>Formulaire d'enregistrement</h1>
       {success && <p className="success" data-cy="success-message">Enregistrement réussi!</p>}
+      {apiError && <p className="api-error" data-cy="api-error">{apiError}</p>}
       <form onSubmit={handleSubmit} data-cy="register-form">
         <div>
           <label htmlFor="nom">Nom:</label>
@@ -131,7 +142,9 @@ function RegisterPage() {
           {errors.codePostal && <span className="error" data-cy="error-codePostal">{errors.codePostal}</span>}
         </div>
 
-        <button type="submit" data-cy="submit-btn">S'enregistrer</button>
+        <button type="submit" disabled={submitting} data-cy="submit-btn">
+          {submitting ? 'Chargement...' : 'S\'enregistrer'}
+        </button>
       </form>
     </div>
   );
