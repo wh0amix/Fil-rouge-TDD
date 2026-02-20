@@ -22,16 +22,6 @@ describe('Navigation E2E - Scénarios Multi-Pages', () => {
         }
       }).as('createUser');
 
-      // Mocker le GET pour afficher l'utilisateur créé
-      cy.intercept('GET', '**/users', {
-        statusCode: 200,
-        body: [{
-          id: 1,
-          name: 'Dupont Pierre',
-          email: 'pierre.dupont@example.com'
-        }]
-      }).as('getUsersAfter');
-
       // 1. Accéder à l'accueil
       cy.visit('/');
       cy.wait('@getUsers');
@@ -64,16 +54,13 @@ describe('Navigation E2E - Scénarios Multi-Pages', () => {
       // 8. Vérifier le message de succès
       cy.get('[data-cy="success-message"]').should('be.visible').and('contain', 'Enregistrement réussi');
 
-      // 9. Attendre la redirection (2 secondes)
-      cy.url({ timeout: 5000 }).should('include', '/');
+      // 9. Attendre la redirection vers l'accueil
+      cy.url({ timeout: 5000 }).should('not.include', '/register');
 
-      // 10. Attendre le GET des utilisateurs après
-      cy.wait('@getUsersAfter');
-
-      // 11. Vérifier que le compteur est mis à jour
+      // 10. Vérifier que le compteur est mis à jour (état local mis à jour par addUser)
       cy.get('[data-cy="user-count"]').should('contain', '1 utilisateur(s) inscrit(s)');
 
-      // 12. Vérifier que l'utilisateur apparaît dans la liste
+      // 11. Vérifier que l'utilisateur apparaît dans la liste
       cy.get('[data-cy="users-list"]').should('be.visible');
       cy.get('[data-cy="user-0"]').should('contain', 'Dupont Pierre');
     });
@@ -154,10 +141,12 @@ describe('Navigation E2E - Scénarios Multi-Pages', () => {
     });
 
     it('should allow retry after server error', () => {
-      // Premier appel: erreur 500
-      // Deuxième appel: succès
+      // Compteur pour différencier le 1er et 2ème appel POST
+      let callCount = 0;
+
       cy.intercept('POST', '**/users', (req) => {
-        if (req.reply.callCount === 1) {
+        callCount++;
+        if (callCount === 1) {
           req.reply({
             statusCode: 500,
             body: { message: 'Server Error' }
@@ -186,12 +175,14 @@ describe('Navigation E2E - Scénarios Multi-Pages', () => {
       cy.get('[data-cy="input-ville"]').type('Paris');
       cy.get('[data-cy="input-codePostal"]').type('75001');
 
-      // Premier essai - erreur
+      // Premier essai - erreur 500
       cy.get('[data-cy="submit-btn"]').click();
-      cy.get('[data-cy="api-error"]').should('be.visible');
+      cy.wait('@createUserRetry');
+      cy.get('[data-cy="api-error"]').should('be.visible').and('contain', 'Server Error');
 
       // Deuxième essai - succès
       cy.get('[data-cy="submit-btn"]').click();
+      cy.wait('@createUserRetry');
       cy.get('[data-cy="success-message"]').should('be.visible');
     });
   });
@@ -211,11 +202,8 @@ describe('Navigation E2E - Scénarios Multi-Pages', () => {
       cy.get('[data-cy="error-nom"]').should('be.visible');
       cy.get('[data-cy="error-email"]').should('be.visible');
 
-      // Vérifier qu'aucun appel POST n'a été fait
-      cy.get('body').then(() => {
-        // Les interceptions POST ne devraient pas avoir été appelées
-        cy.get('[data-cy="api-error"]').should('not.exist');
-      });
+      // Vérifier qu'aucune erreur API n'est affichée
+      cy.get('[data-cy="api-error"]').should('not.exist');
     });
   });
 });
