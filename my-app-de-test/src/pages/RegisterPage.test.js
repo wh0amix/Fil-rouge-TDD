@@ -1,4 +1,5 @@
 import { render, screen, cleanup, waitFor } from '@testing-library/react';
+import { act } from 'react-dom/test-utils';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter as Router } from 'react-router-dom';
 import axios from 'axios';
@@ -10,7 +11,7 @@ jest.mock('axios');
 const renderWithProviders = (component) => {
   return render(
     <UsersProvider>
-      <Router>
+      <Router basename={process.env.PUBLIC_URL}>
         {component}
       </Router>
     </UsersProvider>

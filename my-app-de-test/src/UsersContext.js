@@ -17,7 +17,7 @@ export const UsersProvider = ({ children }) => {
         setUsers(data);
         setApiError(null);
       } catch (error) {
-        setApiError(error.message);
+        setApiError(error.response?.data?.message || error.message);
         setUsers([]);
       } finally {
         setLoading(false);
@@ -35,7 +35,7 @@ export const UsersProvider = ({ children }) => {
       setUsers([...users, createdUser]);
       return createdUser;
     } catch (error) {
-      setApiError(error.message);
+      setApiError(error.response?.data?.message || error.message);
       throw error;
     } finally {
       setLoading(false);
