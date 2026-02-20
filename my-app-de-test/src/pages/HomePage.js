@@ -25,7 +25,7 @@ function HomePage() {
           <ul data-cy="users-list" className="users-list">
             {users.map((user, index) => (
               <li key={index} data-cy={`user-${index}`}>
-                <span className="user-name">{user.nom} {user.prenom}</span>
+                <span className="user-name">{user.name || `${user.nom} ${user.prenom}`}</span>
                 <span className="user-email">({user.email})</span>
               </li>
             ))}
