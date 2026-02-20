@@ -8,7 +8,13 @@ import './App.css';
 function App() {
   return (
     <UsersProvider>
-      <Router basename={process.env.PUBLIC_URL} future={{ v7_startTransition: true }}>
+      <Router
+        basename={process.env.PUBLIC_URL}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true
+        }}
+      >
         <nav className="navbar">
           <Link to="/" className="nav-home" data-cy="nav-home">Accueil</Link>
         </nav>

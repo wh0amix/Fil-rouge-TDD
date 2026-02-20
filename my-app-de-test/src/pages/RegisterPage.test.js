@@ -1,5 +1,5 @@
 import { render, screen, cleanup, waitFor } from '@testing-library/react';
-import { act } from 'react-dom/test-utils';
+import { act } from 'react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter as Router } from 'react-router-dom';
 import axios from 'axios';
