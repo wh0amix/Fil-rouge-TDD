@@ -8,34 +8,41 @@ import RegisterPage from './RegisterPage';
 
 jest.mock('axios');
 
-const renderWithProviders = (component) => {
-  return render(
-    <UsersProvider>
-      <Router basename={process.env.PUBLIC_URL}>
-        {component}
-      </Router>
-    </UsersProvider>
-  );
+const renderWithProviders = async (component) => {
+  let result;
+  await act(async () => {
+    result = render(
+      <UsersProvider>
+        <Router
+          basename={process.env.PUBLIC_URL}
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true
+          }}
+        >
+          {component}
+        </Router>
+      </UsersProvider>
+    );
+  });
+  return result;
 };
 
 describe('RegisterPage Component', () => {
   beforeEach(() => {
     cleanup();
-    jest.clearAllMocks();
-    jest.useFakeTimers();
-    // Mock successful API call by default
+    jest.resetAllMocks();
+    // Mock GET users by default (called on mount by UsersContext)
     axios.get.mockResolvedValueOnce({ data: [] });
-    axios.post.mockResolvedValueOnce({ data: { id: 1 } });
   });
 
   afterEach(() => {
     cleanup();
-    jest.useRealTimers();
   });
 
   describe('Rendering', () => {
-    test('should render the form with all fields', () => {
-      renderWithProviders(<RegisterPage />);
+    test('should render the form with all fields', async () => {
+      await renderWithProviders(<RegisterPage />);
       expect(screen.getByText('Formulaire d\'enregistrement')).toBeInTheDocument();
       expect(document.getElementById('nom')).toBeInTheDocument();
       expect(document.getElementById('prenom')).toBeInTheDocument();
@@ -46,8 +53,8 @@ describe('RegisterPage Component', () => {
       expect(screen.getByRole('button', { name: /S'enregistrer/i })).toBeInTheDocument();
     });
 
-    test('should have empty form fields initially', () => {
-      renderWithProviders(<RegisterPage />);
+    test('should have empty form fields initially', async () => {
+      await renderWithProviders(<RegisterPage />);
       expect(document.getElementById('nom')).toHaveValue('');
       expect(document.getElementById('prenom')).toHaveValue('');
       expect(document.getElementById('email')).toHaveValue('');
@@ -59,14 +66,14 @@ describe('RegisterPage Component', () => {
 
   describe('Form Input Handling', () => {
     test('should update form fields on user input', async () => {
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const nomInput = document.getElementById('nom');
       await userEvent.type(nomInput, 'Dupont');
       expect(nomInput).toHaveValue('Dupont');
     });
 
     test('should clear error message when field is changed', async () => {
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
       await userEvent.click(submitButton);
       expect(screen.getByText('Le nom doit contenir uniquement des lettres')).toBeInTheDocument();
@@ -79,14 +86,14 @@ describe('RegisterPage Component', () => {
 
   describe('Form Validation', () => {
     test('should show error for empty nom', async () => {
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
       await userEvent.click(submitButton);
       expect(screen.getByText('Le nom doit contenir uniquement des lettres')).toBeInTheDocument();
     });
 
     test('should show error for invalid email', async () => {
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const nomInput = document.getElementById('nom');
       const prenomInput = document.getElementById('prenom');
       const emailInput = document.getElementById('email');
@@ -101,7 +108,7 @@ describe('RegisterPage Component', () => {
     });
 
     test('should show error for age under 18', async () => {
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const seventeenYearsAgo = new Date(today.getFullYear() - 17, today.getMonth(), today.getDate());
       const dateString = seventeenYearsAgo.toISOString().split('T')[0];
@@ -123,51 +130,37 @@ describe('RegisterPage Component', () => {
   });
 
   describe('Form Submission', () => {
-    test('should not submit form with validation errors', async () => {
-      renderWithProviders(<RegisterPage />);
+    test('should not call API when validation fails', async () => {
+      await renderWithProviders(<RegisterPage />);
       const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
       await userEvent.click(submitButton);
-      expect(localStorage.getItem('users')).toBeNull();
+      expect(axios.post).not.toHaveBeenCalled();
     });
 
-    test('should save valid form data and show success message', async () => {
-      renderWithProviders(<RegisterPage />);
+    test('should show success message after valid submission', async () => {
+      axios.post.mockResolvedValueOnce({ data: { id: 1 } });
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
       const dateString = twentyYearsAgo.toISOString().split('T')[0];
 
-      const nomInput = document.getElementById('nom');
-      const prenomInput = document.getElementById('prenom');
-      const emailInput = document.getElementById('email');
-      const dateInput = document.getElementById('dateNaissance');
-      const villeInput = document.getElementById('ville');
-      const codePostalInput = document.getElementById('codePostal');
+      await userEvent.type(document.getElementById('nom'), 'Dupont');
+      await userEvent.type(document.getElementById('prenom'), 'Jean');
+      await userEvent.type(document.getElementById('email'), 'jean@example.com');
+      await userEvent.type(document.getElementById('dateNaissance'), dateString);
+      await userEvent.type(document.getElementById('ville'), 'Paris');
+      await userEvent.type(document.getElementById('codePostal'), '75001');
 
-      await userEvent.type(nomInput, 'Dupont');
-      await userEvent.type(prenomInput, 'Jean');
-      await userEvent.type(emailInput, 'jean@example.com');
-      await userEvent.type(dateInput, dateString);
-      await userEvent.type(villeInput, 'Paris');
-      await userEvent.type(codePostalInput, '75001');
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
-      const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
-
-      expect(screen.getByText('Enregistrement réussi!')).toBeInTheDocument();
-      const users = JSON.parse(localStorage.getItem('users'));
-      expect(users).toHaveLength(1);
-      expect(users[0]).toEqual({
-        nom: 'Dupont',
-        prenom: 'Jean',
-        email: 'jean@example.com',
-        dateNaissance: dateString,
-        ville: 'Paris',
-        codePostal: '75001'
+      await waitFor(() => {
+        expect(screen.getByText('Enregistrement réussi!')).toBeInTheDocument();
       });
     });
 
     test('should clear form after successful submission', async () => {
-      renderWithProviders(<RegisterPage />);
+      axios.post.mockResolvedValueOnce({ data: { id: 1 } });
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
       const dateString = twentyYearsAgo.toISOString().split('T')[0];
@@ -186,15 +179,16 @@ describe('RegisterPage Component', () => {
       await userEvent.type(villeInput, 'Paris');
       await userEvent.type(codePostalInput, '75001');
 
-      const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
-      expect(nomInput).toHaveValue('');
-      expect(prenomInput).toHaveValue('');
-      expect(emailInput).toHaveValue('');
-      expect(dateInput).toHaveValue('');
-      expect(villeInput).toHaveValue('');
-      expect(codePostalInput).toHaveValue('');
+      await waitFor(() => {
+        expect(nomInput).toHaveValue('');
+        expect(prenomInput).toHaveValue('');
+        expect(emailInput).toHaveValue('');
+        expect(dateInput).toHaveValue('');
+        expect(villeInput).toHaveValue('');
+        expect(codePostalInput).toHaveValue('');
+      });
     });
   });
 
@@ -205,27 +199,19 @@ describe('RegisterPage Component', () => {
         data: { id: 1, name: 'Dupont Jean', email: 'jean@example.com' }
       });
 
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
       const dateString = twentyYearsAgo.toISOString().split('T')[0];
 
-      const nomInput = document.getElementById('nom');
-      const prenomInput = document.getElementById('prenom');
-      const emailInput = document.getElementById('email');
-      const dateInput = document.getElementById('dateNaissance');
-      const villeInput = document.getElementById('ville');
-      const codePostalInput = document.getElementById('codePostal');
+      await userEvent.type(document.getElementById('nom'), 'Dupont');
+      await userEvent.type(document.getElementById('prenom'), 'Jean');
+      await userEvent.type(document.getElementById('email'), 'jean@example.com');
+      await userEvent.type(document.getElementById('dateNaissance'), dateString);
+      await userEvent.type(document.getElementById('ville'), 'Paris');
+      await userEvent.type(document.getElementById('codePostal'), '75001');
 
-      await userEvent.type(nomInput, 'Dupont');
-      await userEvent.type(prenomInput, 'Jean');
-      await userEvent.type(emailInput, 'jean@example.com');
-      await userEvent.type(dateInput, dateString);
-      await userEvent.type(villeInput, 'Paris');
-      await userEvent.type(codePostalInput, '75001');
-
-      const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
       await waitFor(() => {
         expect(axios.post).toHaveBeenCalledWith(
@@ -244,27 +230,19 @@ describe('RegisterPage Component', () => {
       axios.get.mockResolvedValueOnce({ data: [] });
       axios.post.mockResolvedValueOnce({ data: { id: 1 } });
 
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
       const dateString = twentyYearsAgo.toISOString().split('T')[0];
 
-      const nomInput = document.getElementById('nom');
-      const prenomInput = document.getElementById('prenom');
-      const emailInput = document.getElementById('email');
-      const dateInput = document.getElementById('dateNaissance');
-      const villeInput = document.getElementById('ville');
-      const codePostalInput = document.getElementById('codePostal');
+      await userEvent.type(document.getElementById('nom'), 'Dupont');
+      await userEvent.type(document.getElementById('prenom'), 'Jean');
+      await userEvent.type(document.getElementById('email'), 'jean@example.com');
+      await userEvent.type(document.getElementById('dateNaissance'), dateString);
+      await userEvent.type(document.getElementById('ville'), 'Paris');
+      await userEvent.type(document.getElementById('codePostal'), '75001');
 
-      await userEvent.type(nomInput, 'Dupont');
-      await userEvent.type(prenomInput, 'Jean');
-      await userEvent.type(emailInput, 'jean@example.com');
-      await userEvent.type(dateInput, dateString);
-      await userEvent.type(villeInput, 'Paris');
-      await userEvent.type(codePostalInput, '75001');
-
-      const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Enregistrement réussi!')).toBeInTheDocument();
@@ -280,24 +258,17 @@ describe('RegisterPage Component', () => {
       });
       axios.post.mockReturnValueOnce(promise);
 
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
       const dateString = twentyYearsAgo.toISOString().split('T')[0];
 
-      const nomInput = document.getElementById('nom');
-      const prenomInput = document.getElementById('prenom');
-      const emailInput = document.getElementById('email');
-      const dateInput = document.getElementById('dateNaissance');
-      const villeInput = document.getElementById('ville');
-      const codePostalInput = document.getElementById('codePostal');
-
-      await userEvent.type(nomInput, 'Dupont');
-      await userEvent.type(prenomInput, 'Jean');
-      await userEvent.type(emailInput, 'jean@example.com');
-      await userEvent.type(dateInput, dateString);
-      await userEvent.type(villeInput, 'Paris');
-      await userEvent.type(codePostalInput, '75001');
+      await userEvent.type(document.getElementById('nom'), 'Dupont');
+      await userEvent.type(document.getElementById('prenom'), 'Jean');
+      await userEvent.type(document.getElementById('email'), 'jean@example.com');
+      await userEvent.type(document.getElementById('dateNaissance'), dateString);
+      await userEvent.type(document.getElementById('ville'), 'Paris');
+      await userEvent.type(document.getElementById('codePostal'), '75001');
 
       const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
       await userEvent.click(submitButton);
@@ -316,27 +287,19 @@ describe('RegisterPage Component', () => {
       axios.get.mockResolvedValueOnce({ data: [] });
       axios.post.mockRejectedValueOnce(new Error('Network error'));
 
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
       const dateString = twentyYearsAgo.toISOString().split('T')[0];
 
-      const nomInput = document.getElementById('nom');
-      const prenomInput = document.getElementById('prenom');
-      const emailInput = document.getElementById('email');
-      const dateInput = document.getElementById('dateNaissance');
-      const villeInput = document.getElementById('ville');
-      const codePostalInput = document.getElementById('codePostal');
+      await userEvent.type(document.getElementById('nom'), 'Dupont');
+      await userEvent.type(document.getElementById('prenom'), 'Jean');
+      await userEvent.type(document.getElementById('email'), 'jean@example.com');
+      await userEvent.type(document.getElementById('dateNaissance'), dateString);
+      await userEvent.type(document.getElementById('ville'), 'Paris');
+      await userEvent.type(document.getElementById('codePostal'), '75001');
 
-      await userEvent.type(nomInput, 'Dupont');
-      await userEvent.type(prenomInput, 'Jean');
-      await userEvent.type(emailInput, 'jean@example.com');
-      await userEvent.type(dateInput, dateString);
-      await userEvent.type(villeInput, 'Paris');
-      await userEvent.type(codePostalInput, '75001');
-
-      const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Network error')).toBeInTheDocument();
@@ -347,7 +310,7 @@ describe('RegisterPage Component', () => {
       axios.get.mockResolvedValueOnce({ data: [] });
       axios.post.mockRejectedValueOnce(new Error('Network error'));
 
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
       const dateString = twentyYearsAgo.toISOString().split('T')[0];
@@ -355,19 +318,15 @@ describe('RegisterPage Component', () => {
       const nomInput = document.getElementById('nom');
       const prenomInput = document.getElementById('prenom');
       const emailInput = document.getElementById('email');
-      const dateInput = document.getElementById('dateNaissance');
-      const villeInput = document.getElementById('ville');
-      const codePostalInput = document.getElementById('codePostal');
 
       await userEvent.type(nomInput, 'Dupont');
       await userEvent.type(prenomInput, 'Jean');
       await userEvent.type(emailInput, 'jean@example.com');
-      await userEvent.type(dateInput, dateString);
-      await userEvent.type(villeInput, 'Paris');
-      await userEvent.type(codePostalInput, '75001');
+      await userEvent.type(document.getElementById('dateNaissance'), dateString);
+      await userEvent.type(document.getElementById('ville'), 'Paris');
+      await userEvent.type(document.getElementById('codePostal'), '75001');
 
-      const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
       await waitFor(() => {
         expect(nomInput).toHaveValue('Dupont');
@@ -382,27 +341,19 @@ describe('RegisterPage Component', () => {
         .mockRejectedValueOnce(new Error('Network error'))
         .mockResolvedValueOnce({ data: { id: 1 } });
 
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
       const dateString = twentyYearsAgo.toISOString().split('T')[0];
 
-      const nomInput = document.getElementById('nom');
-      const prenomInput = document.getElementById('prenom');
-      const emailInput = document.getElementById('email');
-      const dateInput = document.getElementById('dateNaissance');
-      const villeInput = document.getElementById('ville');
-      const codePostalInput = document.getElementById('codePostal');
+      await userEvent.type(document.getElementById('nom'), 'Dupont');
+      await userEvent.type(document.getElementById('prenom'), 'Jean');
+      await userEvent.type(document.getElementById('email'), 'jean@example.com');
+      await userEvent.type(document.getElementById('dateNaissance'), dateString);
+      await userEvent.type(document.getElementById('ville'), 'Paris');
+      await userEvent.type(document.getElementById('codePostal'), '75001');
 
-      await userEvent.type(nomInput, 'Dupont');
-      await userEvent.type(prenomInput, 'Jean');
-      await userEvent.type(emailInput, 'jean@example.com');
-      await userEvent.type(dateInput, dateString);
-      await userEvent.type(villeInput, 'Paris');
-      await userEvent.type(codePostalInput, '75001');
-
-      let submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
       // First submission fails
       await waitFor(() => {
@@ -410,8 +361,7 @@ describe('RegisterPage Component', () => {
       });
 
       // Try again - should succeed
-      submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Enregistrement réussi!')).toBeInTheDocument();
@@ -423,9 +373,8 @@ describe('RegisterPage Component', () => {
     test('should not call API when validation fails', async () => {
       axios.get.mockResolvedValueOnce({ data: [] });
 
-      renderWithProviders(<RegisterPage />);
-      const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await renderWithProviders(<RegisterPage />);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
       await waitFor(() => {
         expect(axios.post).not.toHaveBeenCalled();
@@ -436,27 +385,19 @@ describe('RegisterPage Component', () => {
       axios.get.mockResolvedValueOnce({ data: [] });
       axios.post.mockRejectedValueOnce(new Error('Server Error'));
 
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
       const dateString = twentyYearsAgo.toISOString().split('T')[0];
 
-      const nomInput = document.getElementById('nom');
-      const prenomInput = document.getElementById('prenom');
-      const emailInput = document.getElementById('email');
-      const dateInput = document.getElementById('dateNaissance');
-      const villeInput = document.getElementById('ville');
-      const codePostalInput = document.getElementById('codePostal');
+      await userEvent.type(document.getElementById('nom'), 'Test');
+      await userEvent.type(document.getElementById('prenom'), 'User');
+      await userEvent.type(document.getElementById('email'), 'test@example.com');
+      await userEvent.type(document.getElementById('dateNaissance'), dateString);
+      await userEvent.type(document.getElementById('ville'), 'Paris');
+      await userEvent.type(document.getElementById('codePostal'), '75001');
 
-      await userEvent.type(nomInput, 'Test');
-      await userEvent.type(prenomInput, 'User');
-      await userEvent.type(emailInput, 'test@example.com');
-      await userEvent.type(dateInput, dateString);
-      await userEvent.type(villeInput, 'Paris');
-      await userEvent.type(codePostalInput, '75001');
-
-      const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Server Error')).toBeInTheDocument();
@@ -469,27 +410,19 @@ describe('RegisterPage Component', () => {
       axios.get.mockResolvedValueOnce({ data: [] });
       axios.post.mockResolvedValueOnce({ data: { id: 1 } });
 
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
       const dateString = twentyYearsAgo.toISOString().split('T')[0];
 
-      const nomInput = document.getElementById('nom');
-      const prenomInput = document.getElementById('prenom');
-      const emailInput = document.getElementById('email');
-      const dateInput = document.getElementById('dateNaissance');
-      const villeInput = document.getElementById('ville');
-      const codePostalInput = document.getElementById('codePostal');
+      await userEvent.type(document.getElementById('nom'), 'BERNARD');
+      await userEvent.type(document.getElementById('prenom'), 'Claude');
+      await userEvent.type(document.getElementById('email'), 'claude.bernard@example.com');
+      await userEvent.type(document.getElementById('dateNaissance'), dateString);
+      await userEvent.type(document.getElementById('ville'), 'Marseille');
+      await userEvent.type(document.getElementById('codePostal'), '13000');
 
-      await userEvent.type(nomInput, 'BERNARD');
-      await userEvent.type(prenomInput, 'Claude');
-      await userEvent.type(emailInput, 'claude.bernard@example.com');
-      await userEvent.type(dateInput, dateString);
-      await userEvent.type(villeInput, 'Marseille');
-      await userEvent.type(codePostalInput, '13000');
-
-      const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
       await waitFor(() => {
         expect(axios.post).toHaveBeenCalledWith(
@@ -512,27 +445,22 @@ describe('RegisterPage Component', () => {
       error.response = { status: 400, data: { message: 'Email already exists' } };
       axios.post.mockRejectedValueOnce(error);
 
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
       const dateString = twentyYearsAgo.toISOString().split('T')[0];
 
       const nomInput = document.getElementById('nom');
-      const prenomInput = document.getElementById('prenom');
       const emailInput = document.getElementById('email');
-      const dateInput = document.getElementById('dateNaissance');
-      const villeInput = document.getElementById('ville');
-      const codePostalInput = document.getElementById('codePostal');
 
       await userEvent.type(nomInput, 'Dupont');
-      await userEvent.type(prenomInput, 'Jean');
+      await userEvent.type(document.getElementById('prenom'), 'Jean');
       await userEvent.type(emailInput, 'existing@example.com');
-      await userEvent.type(dateInput, dateString);
-      await userEvent.type(villeInput, 'Paris');
-      await userEvent.type(codePostalInput, '75001');
+      await userEvent.type(document.getElementById('dateNaissance'), dateString);
+      await userEvent.type(document.getElementById('ville'), 'Paris');
+      await userEvent.type(document.getElementById('codePostal'), '75001');
 
-      const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Email already exists')).toBeInTheDocument();
@@ -548,27 +476,19 @@ describe('RegisterPage Component', () => {
       error.response = { status: 400, data: { message: 'Invalid email format' } };
       axios.post.mockRejectedValueOnce(error);
 
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
       const dateString = twentyYearsAgo.toISOString().split('T')[0];
 
-      const nomInput = document.getElementById('nom');
-      const prenomInput = document.getElementById('prenom');
-      const emailInput = document.getElementById('email');
-      const dateInput = document.getElementById('dateNaissance');
-      const villeInput = document.getElementById('ville');
-      const codePostalInput = document.getElementById('codePostal');
+      await userEvent.type(document.getElementById('nom'), 'Test');
+      await userEvent.type(document.getElementById('prenom'), 'User');
+      await userEvent.type(document.getElementById('email'), 'test@example.com');
+      await userEvent.type(document.getElementById('dateNaissance'), dateString);
+      await userEvent.type(document.getElementById('ville'), 'Paris');
+      await userEvent.type(document.getElementById('codePostal'), '75001');
 
-      await userEvent.type(nomInput, 'Test');
-      await userEvent.type(prenomInput, 'User');
-      await userEvent.type(emailInput, 'test@example.com');
-      await userEvent.type(dateInput, dateString);
-      await userEvent.type(villeInput, 'Paris');
-      await userEvent.type(codePostalInput, '75001');
-
-      const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Invalid email format')).toBeInTheDocument();
@@ -583,27 +503,19 @@ describe('RegisterPage Component', () => {
       error.response = { status: 500, data: { message: 'Internal Server Error' } };
       axios.post.mockRejectedValueOnce(error);
 
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
       const dateString = twentyYearsAgo.toISOString().split('T')[0];
 
-      const nomInput = document.getElementById('nom');
-      const prenomInput = document.getElementById('prenom');
-      const emailInput = document.getElementById('email');
-      const dateInput = document.getElementById('dateNaissance');
-      const villeInput = document.getElementById('ville');
-      const codePostalInput = document.getElementById('codePostal');
+      await userEvent.type(document.getElementById('nom'), 'Dupont');
+      await userEvent.type(document.getElementById('prenom'), 'Jean');
+      await userEvent.type(document.getElementById('email'), 'jean@example.com');
+      await userEvent.type(document.getElementById('dateNaissance'), dateString);
+      await userEvent.type(document.getElementById('ville'), 'Paris');
+      await userEvent.type(document.getElementById('codePostal'), '75001');
 
-      await userEvent.type(nomInput, 'Dupont');
-      await userEvent.type(prenomInput, 'Jean');
-      await userEvent.type(emailInput, 'jean@example.com');
-      await userEvent.type(dateInput, dateString);
-      await userEvent.type(villeInput, 'Paris');
-      await userEvent.type(codePostalInput, '75001');
-
-      const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Internal Server Error')).toBeInTheDocument();
@@ -616,27 +528,21 @@ describe('RegisterPage Component', () => {
       axios.get.mockResolvedValueOnce({ data: [] });
       axios.post.mockRejectedValueOnce(new Error('Server Unavailable'));
 
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
       const dateString = twentyYearsAgo.toISOString().split('T')[0];
 
       const nomInput = document.getElementById('nom');
-      const prenomInput = document.getElementById('prenom');
-      const emailInput = document.getElementById('email');
-      const dateInput = document.getElementById('dateNaissance');
-      const villeInput = document.getElementById('ville');
-      const codePostalInput = document.getElementById('codePostal');
 
       await userEvent.type(nomInput, 'Test');
-      await userEvent.type(prenomInput, 'Down');
-      await userEvent.type(emailInput, 'test@example.com');
-      await userEvent.type(dateInput, dateString);
-      await userEvent.type(villeInput, 'Paris');
-      await userEvent.type(codePostalInput, '75001');
+      await userEvent.type(document.getElementById('prenom'), 'Down');
+      await userEvent.type(document.getElementById('email'), 'test@example.com');
+      await userEvent.type(document.getElementById('dateNaissance'), dateString);
+      await userEvent.type(document.getElementById('ville'), 'Paris');
+      await userEvent.type(document.getElementById('codePostal'), '75001');
 
-      const submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Server Unavailable')).toBeInTheDocument();
@@ -653,34 +559,25 @@ describe('RegisterPage Component', () => {
         .mockRejectedValueOnce(new Error('Server Error'))
         .mockResolvedValueOnce({ data: { id: 1 } });
 
-      renderWithProviders(<RegisterPage />);
+      await renderWithProviders(<RegisterPage />);
       const today = new Date();
       const twentyYearsAgo = new Date(today.getFullYear() - 20, today.getMonth(), today.getDate());
       const dateString = twentyYearsAgo.toISOString().split('T')[0];
 
-      const nomInput = document.getElementById('nom');
-      const prenomInput = document.getElementById('prenom');
-      const emailInput = document.getElementById('email');
-      const dateInput = document.getElementById('dateNaissance');
-      const villeInput = document.getElementById('ville');
-      const codePostalInput = document.getElementById('codePostal');
+      await userEvent.type(document.getElementById('nom'), 'Retry');
+      await userEvent.type(document.getElementById('prenom'), 'User');
+      await userEvent.type(document.getElementById('email'), 'retry@example.com');
+      await userEvent.type(document.getElementById('dateNaissance'), dateString);
+      await userEvent.type(document.getElementById('ville'), 'Paris');
+      await userEvent.type(document.getElementById('codePostal'), '75001');
 
-      await userEvent.type(nomInput, 'Retry');
-      await userEvent.type(prenomInput, 'User');
-      await userEvent.type(emailInput, 'retry@example.com');
-      await userEvent.type(dateInput, dateString);
-      await userEvent.type(villeInput, 'Paris');
-      await userEvent.type(codePostalInput, '75001');
-
-      let submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Server Error')).toBeInTheDocument();
       });
 
-      submitButton = screen.getByRole('button', { name: /S'enregistrer/i });
-      await userEvent.click(submitButton);
+      await userEvent.click(screen.getByRole('button', { name: /S'enregistrer/i }));
 
       await waitFor(() => {
         expect(screen.getByText('Enregistrement réussi!')).toBeInTheDocument();
