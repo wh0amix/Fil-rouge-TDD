@@ -1,6 +1,23 @@
 # Application d'Enregistrement avec API
 
+[![npm version](https://img.shields.io/npm/v/my-app-de-test.svg)](https://www.npmjs.com/package/my-app-de-test)
+
 Formulaire d'enregistrement utilisant JSONPlaceholder comme API externe. Tests complètement isolés via mocks Jest et Cypress.
+
+## Package npm
+
+[https://www.npmjs.com/package/my-app-de-test](https://www.npmjs.com/package/my-app-de-test)
+
+### Utilisation de la librairie
+
+```bash
+npm install my-app-de-test
+```
+
+```javascript
+import { RegisterPage, validateEmail, validateFormData } from 'my-app-de-test';
+```
+
 
 ## Installation
 

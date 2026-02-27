@@ -1,0 +1,10 @@
+src/
+public/
+cypress/
+coverage/
+build/
+node_modules/
+.env*
+*.test.js
+*.config.js
+babel.config.json

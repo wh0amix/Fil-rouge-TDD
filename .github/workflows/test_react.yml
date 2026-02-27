@@ -12,7 +12,7 @@ permissions:
   id-token: write
 
 jobs:
-  build_test:
+  build-and-test:
     runs-on: ubuntu-latest
 
     strategy:
@@ -21,40 +21,38 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-      
+
       - name: Install root dependencies
         run: npm install
-      
+
       - name: Install React app dependencies
         working-directory: ./my-app-de-test
         run: npm ci
-      
+
       - name: Build React app
         working-directory: ./my-app-de-test
         run: npm run build
-      
-      - name: Run Jest tests with coverage (mocked API)
+
+      - name: Run Jest tests with coverage
         working-directory: ./my-app-de-test
         run: npm test -- --coverage
-        # Tests d'intégration avec axios mockés - aucun appel réseau réel
 
-      - name: Cypress E2E tests (intercepted API)
+      - name: Cypress E2E tests
         uses: cypress-io/github-action@v6
         with:
           working-directory: ./my-app-de-test
           install: false
           build: npm run build
           start: npm start
-        # Tests E2E avec cy.intercept() - API entièrement mockée
-      
+
       - name: Generate JSDoc documentation
         run: npm run jsdoc
-      
+
       - name: Set up Codecov
         uses: codecov/codecov-action@v3
         with:
@@ -70,52 +68,79 @@ jobs:
           cp -r my-app-de-test/build/* deploy/
           cp -r docs/* deploy/_docs/
           cp -r my-app-de-test/coverage/lcov-report/* deploy/_coverage/
-      
+
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v3
-      
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./deploy
           if-no-files-found: error
 
-      
-  deploy:
-    needs: build_test
+  publish-npm:
+    needs: build-and-test
     if: github.ref == 'refs/heads/main'
-    
     runs-on: ubuntu-latest
-    
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
 
-  publish_npm:
-    needs: build_test
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: Use Node.js for npm publish
+      - name: Use Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-          always-auth: true
-          node-auth-token: ${{ secrets.NPM_TOKEN }}
 
-      - name: Install and publish package to npm
+      - name: Install dependencies
+        working-directory: ./my-app-de-test
+        run: npm ci
+
+      - name: Check version against npm registry
+        id: version_check
+        working-directory: ./my-app-de-test
+        run: |
+          LOCAL_VERSION=$(node -p "require('./package.json').version")
+          NPM_VERSION=$(npm view my-app-de-test version 2>/dev/null || echo "0.0.0")
+          echo "local=$LOCAL_VERSION"
+          echo "npm=$NPM_VERSION"
+          SHOULD_PUBLISH=$(node -e "
+            var local = '$LOCAL_VERSION'.split('.').map(Number);
+            var remote = '$NPM_VERSION'.split('.').map(Number);
+            var gt = local[0] > remote[0] ||
+              (local[0] === remote[0] && local[1] > remote[1]) ||
+              (local[0] === remote[0] && local[1] === remote[1] && local[2] > remote[2]);
+            console.log(gt ? 'true' : 'false');
+          ")
+          echo "should_publish=$SHOULD_PUBLISH" >> $GITHUB_OUTPUT
+
+      - name: Build npm package
+        if: steps.version_check.outputs.should_publish == 'true'
+        working-directory: ./my-app-de-test
+        run: npm run build-npm
+
+      - name: Publish to npm
+        if: steps.version_check.outputs.should_publish == 'true'
         working-directory: ./my-app-de-test
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          npm ci
-          npm publish --access public
+        run: npm publish --access public
+
+      - name: Skip publication
+        if: steps.version_check.outputs.should_publish == 'false'
+        run: echo "Version already published on npm, skipping."
+
+  deploy:
+    needs: publish-npm
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
