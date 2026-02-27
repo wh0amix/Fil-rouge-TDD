@@ -15,8 +15,11 @@ npm install my-app-de-test
 ```
 
 ```javascript
-import { RegisterPage, validateEmail, validateFormData } from 'my-app-de-test';
+import { RegisterPage, validateFormData, validateAll } from 'my-app-de-test';
 ```
+
+> **v2.0.0 : Breaking change** — Les validators unitaires (`validateEmail`, `validateNom`, etc.)
+> ne sont plus exportés depuis l'entrée principale. Utilisez `validateFormData` ou `validateAll`.
 
 
 ## Installation
