@@ -85,6 +85,7 @@ jobs:
         run : |
           git config --global user.email "mougammadou.anas@gmail.com"
            git config --global user.name "Wh0amix"
+           cd my-app-de-test
            npm run build npm
            npm version patch
            npm publish
