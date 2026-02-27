@@ -7,4 +7,5 @@ export {
   validatePrenom,
   validateVille,
   validateFormData,
+  validateAll,
 } from './validators';

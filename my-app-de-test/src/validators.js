@@ -77,3 +77,8 @@ export const validateFormData = (formData) => {
 
   return errors;
 };
+
+export const validateAll = (formData) => {
+  const errors = validateFormData(formData);
+  return { isValid: Object.keys(errors).length === 0, errors };
+};
