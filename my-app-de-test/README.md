@@ -22,11 +22,16 @@ import { RegisterPage, validateFormData, validateAll } from 'my-app-de-test';
 > ne sont plus exportés depuis l'entrée principale. Utilisez `validateFormData` ou `validateAll`.
 
 
-## Installation
+## Historique des versions
 
-```bash
-npm install
-```
+| Version | Type  | Description                                              |
+|---------|-------|----------------------------------------------------------|
+| 2.0.0   | Major | Suppression des validators unitaires de l'API publique   |
+| 1.1.0   | Minor | Ajout de `validateAll` retournant `{ isValid, errors }`  |
+| 1.0.1   | Patch | Guard null dans `validateFormData`                        |
+| 1.0.0   | -     | Publication initiale de la librairie                      |
+
+
 
 ## Démarrage
 
