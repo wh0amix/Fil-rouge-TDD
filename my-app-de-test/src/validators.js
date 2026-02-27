@@ -46,6 +46,7 @@ export const validateVille = (ville) => {
 };
 
 export const validateFormData = (formData) => {
+  if (!formData) return {};
   const errors = {};
 
   if (!validateNom(formData.nom)) {

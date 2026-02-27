@@ -1,6 +1,6 @@
 {
   "name": "my-app-de-test",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Composant de formulaire d'enregistrement React avec validation",
   "main": "dist/lib.js",
   "files": [
