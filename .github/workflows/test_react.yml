@@ -131,8 +131,77 @@ jobs:
         if: steps.version_check.outputs.should_publish == 'false'
         run: echo "Version already published on npm, skipping."
 
-  deploy:
+  validate-and-push:
     needs: publish-npm
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build MySQL image
+        run: docker build -t migration_mysql .
+
+      - name: Build API image
+        run: docker build -t api-python ./api
+
+      - name: Create Docker network
+        run: docker network create app-network
+
+      - name: Start MySQL container
+        run: |
+          docker run -d \
+            --name mysql_container \
+            --network app-network \
+            -e MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }} \
+            migration_mysql
+
+      - name: Wait for MySQL to be ready
+        run: sleep 20
+
+      - name: Start API container
+        run: |
+          docker run -d \
+            --name api_container \
+            --network app-network \
+            -p 8000:8000 \
+            -e MYSQL_HOST=mysql_container \
+            -e MYSQL_USER=root \
+            -e MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }} \
+            -e MYSQL_DATABASE=ynov_ci \
+            api-python
+
+      - name: Wait for API to start
+        run: sleep 5
+
+      - name: Test endpoint /users
+        run: |
+          HTTP_CODE=$(curl -s -o /tmp/resp.json -w "%{http_code}" http://localhost:8000/users)
+          cat /tmp/resp.json
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "FAIL: status HTTP $HTTP_CODE"
+            exit 1
+          fi
+          COUNT=$(python3 -c "import json; d=json.load(open('/tmp/resp.json')); print(len(d['utilisateurs']))")
+          if [ "$COUNT" -eq "0" ]; then
+            echo "FAIL: aucun utilisateur retourné"
+            exit 1
+          fi
+          echo "OK: $COUNT utilisateur(s)"
+
+      - name: Login Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push API image to Docker Hub
+        run: |
+          docker tag api-python ${{ secrets.DOCKERHUB_USERNAME }}/api-python:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/api-python:latest
+
+  deploy:
+    needs: validate-and-push
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
