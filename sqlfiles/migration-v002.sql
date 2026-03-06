@@ -9,3 +9,7 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     mot_de_passe VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe) VALUES
+('Dupont', 'Jean', 'jean.dupont@ynov.com', 'password123'),
+('Martin', 'Alice', 'alice.martin@ynov.com', 'password456');
