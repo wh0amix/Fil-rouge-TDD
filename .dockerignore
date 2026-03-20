@@ -1,0 +1,8 @@
+node_modules
+.git
+.github
+.env
+my-app-de-test
+docs
+coverage
+api
