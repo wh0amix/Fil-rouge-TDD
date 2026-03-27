@@ -215,12 +215,11 @@ describe('RegisterPage Component', () => {
 
       await waitFor(() => {
         expect(axios.post).toHaveBeenCalledWith(
-          'https://jsonplaceholder.typicode.com/users',
+          'http://localhost:8000/users',
           expect.objectContaining({
-            name: 'Dupont Jean',
+            nom: 'Dupont',
+            prenom: 'Jean',
             email: 'jean@example.com',
-            phone: '75001',
-            username: 'dupont'
           })
         );
       });
@@ -426,12 +425,11 @@ describe('RegisterPage Component', () => {
 
       await waitFor(() => {
         expect(axios.post).toHaveBeenCalledWith(
-          'https://jsonplaceholder.typicode.com/users',
+          'http://localhost:8000/users',
           expect.objectContaining({
-            name: 'BERNARD Claude',
+            nom: 'BERNARD',
+            prenom: 'Claude',
             email: 'claude.bernard@example.com',
-            phone: '13000',
-            username: 'bernard'
           })
         );
       });
